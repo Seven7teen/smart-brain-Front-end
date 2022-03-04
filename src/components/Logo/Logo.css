@@ -1,0 +1,10 @@
+.Tilt {
+	border: 1px solid gray;
+	border-radius: 5px;
+	box-shadow: 2px 2px 1px grey;
+	background: linear-gradient(90deg, rgba(193,136,46,1) 0%, rgba(36,207,199,1) 0%, rgba(255,0,164,1) 100%);
+}
+
+.pad {
+	padding-left: 20px;
+}

@@ -1,0 +1,10 @@
+h1 {
+	padding: 10px;
+	color: black;
+}
+
+h1:hover {
+	color: dimgray;
+	text-decoration: underline;
+	cursor: pointer;
+}
