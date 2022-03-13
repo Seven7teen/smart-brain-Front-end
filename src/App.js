@@ -13,7 +13,7 @@ import Particles from "react-tsparticles";
 import Clarifai from 'clarifai';
 
 // const app = new Clarifai.App({
-//   apiKey: "15ab0d611be645b988167234275d33b5",
+//   apiKey: "15ab0d611be645b988167234275d33b5"
 // });
 
 const particlesOptions = {
@@ -88,6 +88,7 @@ const particlesOptions = {
 const initialState = {
   input: '',
   imageUrl: '',
+  box: {},
   route: 'signin',
   isSignedIn: false,
   user: {
@@ -124,35 +125,58 @@ class App extends Component {
   //   .then(data => console.log(data))
   // }
 
+  calculateFaceLocation = (data) => {
+    console.log(data);
+    const lengthRatio = data.outputs[0].data.regions[0].region_info.bounding_box;
+    const image = document.getElementById('inputImage');
+    // const image = new Image();
+    // image.src = this.state.imageUrl;
+    // console.log(image);
+    const width = Number(image.width);
+    console.log(width);
+    const height = Number(image.height);
+    console.log(height);
+    return {
+      left: lengthRatio.left_col * width,
+      right: width - (lengthRatio.right_col * width),
+      top: lengthRatio.top_row * height,
+      bottom: height - (lengthRatio.bottom_row * height)
+    }
+  }
+
+  displayFaceBox = (box) => {
+    console.log(box);
+    this.setState({ box: box});
+  }
+
   onInputChange = (event) => {
     this.setState({input: event.target.value});
   }
 
-  onButtonSubmit = () => {
-    this.setState({imageUrl: this.state.input});
-
-    fetch('http://localhost:3000/image', {
-      method: 'put',
-      headers: {'Content-Type': 'application/json'},
+  onButtonSubmit = (event) => {
+    this.setState({ imageUrl: this.state.input });
+    fetch('https://powerful-brook-09642.herokuapp.com/imageurl', {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        id: this.state.user.id
+        input: this.state.input
       })
-    })
-    .then(response => response.json())
-    .then(count => {
-      this.setState(Object.assign(this.state.user, {entries: count}))
-    })
-    .catch(err => {
-      console.log(err)
-    })
-
-    // app.models.predict(Clarifai.COLOR_MODEL, this.state.input).then(
-    //   function (response) {
-    //     console.log('hi', response);
-    //   },
-    //   function (err) {
-    //   }
-    // );
+    }).then(response => response.json())
+    .then(response => {
+      if (response) {
+        fetch('https://powerful-brook-09642.herokuapp.com/image', {
+          method: 'put',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: this.state.user.id
+          })
+        }).then(response => response.json())
+          .then(count => {
+          this.setState(Object.assign(this.state.user, { entries: count }));
+        }).catch(error => console.log(error));
+      }
+      this.displayFaceBox(this.calculateFaceLocation(response));
+    }).catch(error => console.log(error));        
   }
 
   onRouteChange = (route) => {
@@ -178,7 +202,7 @@ class App extends Component {
               <Logo />
               <Rank name={this.state.user.name} entries={this.state.user.entries}/>
               <ImageLinkForm onInputChange = { this.onInputChange } onButtonSubmit = { this.onButtonSubmit }/>
-              <FaceRecognition imageUrl = { imageUrl }/>
+              <FaceRecognition imageUrl = { imageUrl } box={this.state.box}/>
             </div> :
             ( route === 'register' ?
              <Register loadUser = {this.loadUser} onRouteChange = { this.onRouteChange }/> :
